@@ -31,6 +31,8 @@ const doctorRoutes = require("./routes/doctor");
 app.use("/doctor", doctorRoutes);
 
 //Primal
+const patientRoutes = require("./routes/patient");
+app.use("/patients", patientRoutes);
 
 
 
