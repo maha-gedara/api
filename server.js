@@ -27,6 +27,8 @@ app.use("/students", studentRoutes);
 //Lakshitha
 
 //Jithma
+const doctorRoutes = require("./routes/doctor");
+app.use("/doctor", doctorRoutes);
 
 //Primal
 const patientRoutes = require("./routes/patient");
