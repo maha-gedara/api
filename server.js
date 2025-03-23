@@ -29,6 +29,8 @@ app.use("/students", studentRoutes);
 //Jithma
 
 //Primal
+const patientRoutes = require("./routes/patient");
+app.use("/patients", patientRoutes);
 
 
 
