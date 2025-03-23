@@ -22,7 +22,14 @@ mongoose
 const studentRoutes = require("./routes/student");
 app.use("/students", studentRoutes);
 
-//Sanduni
+
+//Sanduni inventory
+const inventoryRouter = require("./routes/inventory.js");
+app.use("/inventory", inventoryRouter);
+
+//Sanduni billing
+const billingRouter = require("./routes/billing.js");
+app.use("/billing", billingRouter);
 
 //Lakshitha
 
