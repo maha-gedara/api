@@ -1,13 +1,16 @@
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 const cors = require("cors");
+
 
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+app.use(bodyParser.json());
 
 // MongoDB Connection
 mongoose
@@ -18,13 +21,16 @@ mongoose
 
 //  Routes for each CRUD
 
-//test student
-const studentRoutes = require("./routes/student");
-app.use("/students", studentRoutes);
+
 
 //Sanduni
 
 //Lakshitha
+const URL = process.env
+const StaffMemberRouter = require("./routes/staffMembers.js");
+const SalaryRouter = require("./routes/salaries.js");
+app.use("/StaffMember", StaffMemberRouter);
+app.use("/Salary", SalaryRouter);
 
 //Jithma
 
