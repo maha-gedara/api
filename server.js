@@ -23,7 +23,14 @@ mongoose
 
 
 
-//Sanduni
+
+//Sanduni inventory
+const inventoryRouter = require("./routes/inventory.js");
+app.use("/inventory", inventoryRouter);
+
+//Sanduni billing
+const billingRouter = require("./routes/billing.js");
+app.use("/billing", billingRouter);
 
 //Lakshitha
 const URL = process.env
@@ -33,8 +40,12 @@ app.use("/StaffMember", StaffMemberRouter);
 app.use("/Salary", SalaryRouter);
 
 //Jithma
+const doctorRoutes = require("./routes/doctor");
+app.use("/doctor", doctorRoutes);
 
 //Primal
+const patientRoutes = require("./routes/patient");
+app.use("/patients", patientRoutes);
 
 
 
