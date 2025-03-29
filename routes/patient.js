@@ -3,7 +3,7 @@ const router = express.Router();
 const Patient = require("../models/Patient");
 const { spawn } = require("child_process"); // Used to run Python script
 
-// ✅ Create a new patient
+// Create a new patient
 router.post("/add", async (req, res) => {
     try {
         const newPatient = new Patient(req.body);
@@ -14,7 +14,7 @@ router.post("/add", async (req, res) => {
     }
 });
 
-// ✅ Get all patients
+// Get all patients
 router.get("/", async (req, res) => {
     try {
         const patients = await Patient.find();
@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
     }
 });
 
-// ✅ Get a single patient by ID
+// Get a single patient by ID
 router.get("/:id", async (req, res) => {
     try {
         const patient = await Patient.findOne({ _id: req.params.id });
@@ -35,7 +35,26 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// ✅ Update patient record (add new symptoms)
+//update personal data
+router.put("/edit/:id", async (req, res) => {
+    try {
+        const { name, address, telephoneNumber, dateOfBirth } = req.body;
+
+        const updatedPatient = await Patient.findOneAndUpdate(
+            { _id: req.params.id },
+            { name, address, telephoneNumber, dateOfBirth },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedPatient) return res.status(404).json({ message: "Patient not found" });
+
+        res.json({ message: "Patient details updated successfully", patient: updatedPatient });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update patient record (add new symptoms)
 router.put("/update/:id", async (req, res) => {
     try {
         const patient = await Patient.findOne({ _id: req.params.id });
@@ -50,7 +69,7 @@ router.put("/update/:id", async (req, res) => {
     }
 });
 
-// ✅ Delete a patient
+// Delete a patient
 router.delete("/delete/:id", async (req, res) => {
     try {
         const deletedPatient = await Patient.findOneAndDelete({ patientID: req.params.id });
@@ -61,7 +80,7 @@ router.delete("/delete/:id", async (req, res) => {
     }
 });
 
-// ✅ Predict Disease (calls Python script)
+// Predict Disease (calls Python script)
 router.post("/predict", async (req, res) => {
     const symptoms = req.body.symptoms;
     
