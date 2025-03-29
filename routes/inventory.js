@@ -1,103 +1,149 @@
 const router = require("express").Router();
-let Billing = require("../models/Billing");
+let Inventory = require("../models/Inventory");
 
-// Create a new bill
-router.route("/addbi").post(async (req, res) => {
+/// New route to check existing inventory
+router.route("/checkin").get(async (req, res) => {
+    const { medicineName, price, expiryDate } = req.query;
+
     try {
-        const { customerName, medicines, paymentMethod, date } = req.body;
+        // Convert price to number to ensure accurate comparison
+        const numericPrice = parseFloat(price);
 
-        // Calculate total amount dynamically
-        let totalAmount = medicines.reduce((sum, med) => sum + med.quantity * med.price, 0);
-
-        const newBilling = new Billing({
-            customerName,
-            medicines,
-            totalAmount,
-            paymentMethod,
-            date
+        // Find an inventory entry matching medicine name, price, and expiry date
+        const existingInventory = await Inventory.findOne({
+            medicineName, 
+            price: numericPrice, 
+            expiryDate
         });
 
-        await newBilling.save();
-        res.status(201).json({ message: "Billing Added Successfully", billing: newBilling });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Error adding billing record" });
+        if (existingInventory) {
+            res.json({ 
+                exists: true, 
+                medicine: existingInventory 
+            });
+        } else {
+            res.json({ exists: false });
+        }
+    } catch (error) {
+        console.error('Error checking inventory:', error);
+        res.status(500).json({ 
+            message: 'Error checking inventory', 
+            error: error.message 
+        });
     }
 });
 
-// Get all billing records
-router.route("/bi").get(async (req, res) => {
+// Existing route for adding inventory (previously modified)
+router.route("/addin").post(async (req, res) => {
+    const { medicineName, category, price, quantity, expiryDate, supplier } = req.body;
+
     try {
-        const billings = await Billing.find();
-        res.json(billings);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Error fetching billing records" });
-    }
-});
+        // Check if an inventory entry with the same medicine, price, and expiry date exists
+        const existingInventory = await Inventory.findOne({
+            medicineName, 
+            price, 
+            expiryDate
+        });
 
-// Update a billing record
-router.route("/upbi/:id").put(async (req, res) => {
-    try {
-        let billId = req.params.id;
-        const { customerName, medicines, paymentMethod, date } = req.body;
-
-        // Recalculate total amount
-        let totalAmount = medicines.reduce((sum, med) => sum + med.quantity * med.price, 0);
-
-        const updatedBilling = await Billing.findByIdAndUpdate(
-            billId,
-            { customerName, medicines, totalAmount, paymentMethod, date },
-            { new: true }
-        );
-
-        if (!updatedBilling) {
-            return res.status(404).json({ error: "Billing record not found" });
+        if (existingInventory) {
+            // If exists, update the quantity
+            existingInventory.quantity += quantity;
+            await existingInventory.save();
+            
+            return res.json({
+                message: "Inventory Updated Successfully.",
+                inventory: existingInventory
+            });
         }
 
-        res.status(200).json({ message: "Billing updated", billing: updatedBilling });
+        // If no existing entry, create a new inventory
+        const newInventory = new Inventory({
+            medicineName,
+            category,
+            price,
+            quantity,
+            expiryDate,
+            supplier
+        });
+
+        await newInventory.save();
+        res.status(201).json({
+            message: "New Inventory Added Successfully.",
+            inventory: newInventory
+        });
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Error updating billing record" });
+        res.status(500).json({ 
+            error: "Error processing inventory.", 
+            details: err.message 
+        });
     }
 });
 
-// Delete a billing record
-router.route("/deletebi/:id").delete(async (req, res) => {
+
+router.route("/in").get(async (req, res) => {
+    
+    Inventory.find().then((Inventory) => {
+        res.json(Inventory);
+    }).catch((err) => {
+        console.log(err);
+    });
+
+});
+
+router.route("/updatein/:id").put(async(req,res)=>{
+    let userId = req.params.id;
+    const{medicineName,category,price,quantity,expiryDate,supplier} = req.body;
+
+    const updateInventory = {
+        medicineName,
+        category,
+        price,
+        quantity,
+        expiryDate,
+        supplier
+    }
+
     try {
-        let billId = req.params.id;
-        const deletedBilling = await Billing.findByIdAndDelete(billId);
-
-        if (!deletedBilling) {
-            return res.status(404).json({ error: "Billing record not found" });
+        const updatedInventory = await Inventory.findByIdAndUpdate(userId, updateInventory);
+        if (!updatedInventory) {
+            return res.status(404).send({ status: "Error with Updating Inventory", error: "Inventory not found" });
         }
-
-        res.status(200).json({ message: "Billing Deleted Successfully" });
-
+        res.status(200).send({ status: "Inventory Updated Successfully", user: updateInventory });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Error deleting billing record" });
+        console.log(err);
+        res.status(500).send({ status: "Error with Updating Inventory", error: err.message });
     }
 });
 
-// Get a specific billing record
-router.route("/getbi/:id").get(async (req, res) => {
+router.route("/deletein/:id").delete(async(req,res)=>{
+    let userId = req.params.id;
+
+    await Inventory.findByIdAndDelete(userId).then(()=>{
+        res.status(200).send({status:"Inventory Deleted Succesfully"});
+    }).catch((err)=>{
+        console.log(err.message);
+        res.status(500).send({status:"Error with delete inventory",error:err.message});
+    })
+});
+
+
+
+router.route("/getin/:id").get(async (req, res) => {
     try {
-        let billId = req.params.id;
-        const billing = await Billing.findById(billId);
-
-        if (!billing) {
-            return res.status(404).json({ error: "Billing record not found" });
+        const inventoryRecord = await Inventory.findById(req.params.id);
+        if (!inventoryRecord) {
+            return res.status(404).json({ error: "Inventory record not found" });
         }
-
-        res.status(200).json({ message: "Billing fetched successfully", billing });
-
+        res.status(200).json(inventoryRecord);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Error fetching billing record" });
+        res.status(500).json({ error: "Error fetching inventory record" });
     }
 });
+
+
+
 
 module.exports = router;

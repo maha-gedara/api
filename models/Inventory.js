@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 
 const inventorySchema = new Schema({
 
-    name : {
+    medicineName : {
         type : String,
         required : true
     },

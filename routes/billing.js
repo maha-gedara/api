@@ -1,26 +1,49 @@
 const router = require("express").Router();
 let Billing = require("../models/Billing");
+let Inventory = require("../models/Inventory");
 
 // Create Billing Entry
-router.route("/addbi").post((req, res) => {
+router.route("/addbi").post(async (req, res) => {
     const { customerName, medicines, paymentMethod, date } = req.body;
 
-    // Create a new Billing entry with auto-calculated totalAmount
-    const newBilling = new Billing({
-        customerName,
-        medicines,
-        paymentMethod,
-        date
-    });
+    
+    try {
+        // Check and reduce inventory for each medicine
+        for (let medicine of medicines) {
+            const inventoryItem = await Inventory.findOne({ medicineName: medicine.medName });
+            
+            if (!inventoryItem) {
+                return res.status(400).json({ 
+                    message: `Medicine ${medicine.medName} not found in inventory` 
+                });
+            }
 
-    newBilling.save()
-        .then(() => {
-            res.json("Billing Added Successfully");
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).json({ message: "Error adding billing" });
+            if (inventoryItem.quantity < medicine.quantity) {
+                return res.status(400).json({ 
+                    message: `Insufficient stock for ${medicine.medName}. Available: ${inventoryItem.quantity}` 
+                });
+            }
+
+            // Reduce inventory quantity
+            inventoryItem.quantity -= parseInt(medicine.quantity);
+            await inventoryItem.save();
+        }
+
+        // Create a new Billing entry
+        const newBilling = new Billing({
+            customerName,
+            medicines,
+            paymentMethod,
+            date
         });
+
+        await newBilling.save();
+        res.json("Billing Added Successfully");
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error adding billing", error: err.message });
+    }
 });
 
 // Get All Billing Entries
