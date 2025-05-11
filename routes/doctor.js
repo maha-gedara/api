@@ -1,5 +1,6 @@
 const express = require("express");
 const Doctor = require("../models/Doctor.js");
+const sendDoctorRegistrationEmail = require("../util/emailService.js"); 
 
 const router = express.Router();
 
@@ -7,22 +8,24 @@ const router = express.Router();
 router.post("/add", async function (req, res) {
   const { fName, special, cNumber, email, availability } = req.body;
 
-  // Validate the request
   if (!fName || !special || !cNumber || !email || !availability) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
-  // Create a new doctor with availability data
   const newDoctor = new Doctor({
     fName,
     special,
     cNumber,
     email,
-    availability, // Use the availability data sent in the request
+    availability,
   });
 
   try {
     await newDoctor.save();
+
+    // Send confirmation email after saving
+    await sendDoctorRegistrationEmail(email, fName);
+
     res.status(201).json({ message: "Successfully Added Doctor Details." });
   } catch (err) {
     console.log(err);
